@@ -1,0 +1,93 @@
+pipeline {
+    agent {
+                label ("Node2")
+            }
+    options {
+      buildDiscarder(logRotator(numToKeepStr: '20'))
+      disableConcurrentBuilds()
+      timeout (time: 30, unit: 'MINUTES')
+      timestamps()
+    }
+    parameters {
+   string(name: 'BRANCH',
+           defaultValue: 'develop',
+           description: '''branch''')
+    string(name: 'WARNTIME',
+           defaultValue: '1',
+           description: '''Warning time (in minutes) before starting upgrade''')
+  }
+    stages {
+
+        stage('warning') {
+        steps {
+            script {
+                notifyUpgrade(currentBuild.currentResult, "WARNING")
+                sleep(time:env.WARNTIME, unit:"MINUTES")
+                }
+            }
+        }
+
+
+    
+        stage('cleaning environment') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 1'
+            }
+        }
+
+
+         stage('deploying') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 1'
+            }
+        }
+
+   
+    
+    }
+    post {
+    always {
+      script {
+        notifyUpgrade(currentBuild.currentResult, "POST")
+      }
+    }
+    cleanup {
+      deleteDir()
+    }
+  }
+}   
+
+def notifyUpgrade(String buildResult, String whereAt) {
+  if (BRANCH == 'origin/develop') {
+    channel = 'focus-group'
+  } else {
+    channel = 'focus-group'
+  }
+  if (buildResult == "SUCCESS") {
+    switch(whereAt) {
+      case 'WARNING':
+        slackSend(channel: channel,
+                color: "#439FE0",
+                message: "PRE-PRODUCTION-Alpha: Upgrade starting in ${env.WARNTIME} minutes @ ${env.BUILD_URL}")
+        break
+    case 'STARTING':
+      slackSend(channel: channel,
+                color: "good",
+                message: "PRE-PRODUCTION-Alpha: Starting upgrade @ ${env.BUILD_URL}")
+      break
+    default:
+        slackSend(channel: channel,
+                color: "good",
+                message: "PRE-PRODUCTION-Alpha: Upgrade completed successfully @ ${env.BUILD_URL}")
+        break
+    }
+  } else {
+    slackSend(channel: channel,
+              color: "danger",
+              message: "PRE-PRODUCTION-Alpha: Upgrade was not successful. Please investigate it immediately.  @ ${env.BUILD_URL}")
+    }
+}
+
+
