@@ -1,0 +1,166 @@
+pipeline {
+    agent any
+    stages {
+        stage('Setup parameters') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                       
+                            string(
+                                defaultValue: '', 
+                                name: 'tag', 
+                                trim: true
+                            ),
+                            
+                        ])
+                    ])
+                }
+            }
+        }
+
+
+         stage('clone the helm chart repo') {
+            steps {
+                sh '''
+                rm  -rf chart-ingress-nginx || true 
+                git clone  git@github.com:devopseasylearning/chart-ingress-nginx.git
+                
+                '''
+            }
+        }
+
+
+          stage('Update helm chart') {
+            steps {
+                sh '''
+                ls -la 
+                cd chart-ingress-nginx/nginx-ingress/
+
+cat <<EOF > testing_values.yaml
+image:
+  tag: testing-$tag
+EOF
+
+echo
+cat testing_values.yaml
+echo 
+echo 
+
+
+                git config --global user.name "devopseasylearning"
+                git config --global user.email "info@devopseasylearning.com"
+                git add  testing_values.yaml
+                git commit -m "adding new tag"
+                git push 
+                '''
+
+            }
+        }
+
+
+       stage('deploying helm chart to K8S ') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+       
+
+
+
+       stage('load test ') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+
+
+
+
+        stage('user test') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+
+
+
+        stage('functional test ') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+
+
+
+
+       stage('End to End test ') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+
+
+
+       stage('Server test ') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+        
+        stage('Regression test ') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+
+       stage('Fuzzy test') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+
+
+
+       stage('Security test') {
+            steps {
+                sh '''
+                ls 
+                
+                '''
+            }
+        }
+
+
+
+
+
+    }   
+}
+
+
+
