@@ -1,0 +1,143 @@
+pipeline {
+    agent {
+                label ("Node2")
+            }
+    options {
+      buildDiscarder(logRotator(numToKeepStr: '20'))
+      disableConcurrentBuilds()
+      timeout (time: 30, unit: 'MINUTES')
+      timestamps()
+    }
+
+
+
+    parameters {
+   
+    string(name: 'tag',
+           defaultValue: '1.6.0',
+           description: '''Enter the tag sent from Dev team''')
+
+  }
+
+
+
+
+
+
+    stages {
+
+
+
+        stage('cloning repo') {
+            steps {
+                echo 'Hello Wgdfwgngfmmgjhmghjfwgwfgeorld'
+                sh 'sleep 1'
+            }
+        }
+         
+   
+      stage('Images scan test') {
+            steps {
+                echo 'Hello Wgdfwgngfmmgjhmghjfwgwfgeorld'
+                sh 'sleep 1'
+            }
+        }
+
+        
+        stage('Security Test') {
+            steps {
+                echo 'Hello Wgdfwgngfmmgjhmghjfwgwfgeorld'
+                sh 'sleep 1'
+            }
+        }
+
+
+        stage('load test CentOS server ') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 1'
+            }
+        }
+
+
+         stage('load test Ubuntu server' ) {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 1'
+            }
+        }
+        
+
+        stage('Karnibal test') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 1'
+            }
+        }
+
+
+
+       stage('Maturity test') {
+            steps {
+                sh'''
+             sleep 3
+                 '''
+            }
+        }
+    
+         stage('Functional test ') {
+            steps {
+                sh '''
+                sleep 3
+              
+                sh '''
+            }
+        }
+    
+
+
+        stage('Regression test') {
+            steps {
+                sh '''
+                sleep 3
+              
+                sh '''
+            }
+       
+        }  
+
+
+
+        stage('Fuzzy test') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 1'
+            }
+        }
+
+
+        
+        stage('End to End test') {
+            steps {
+               sh '''
+                sleep 3
+                '''
+            }
+        }
+
+
+        stage('Selinux Regression test') {
+            steps {
+                sh '''
+                sleep 3
+              
+                sh '''
+            }
+        }
+    }
+
+
+
+
+}   
+
