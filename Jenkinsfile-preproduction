@@ -1,0 +1,161 @@
+pipeline {
+    agent { 
+        label 'preproduction'
+         }
+   
+   environment {
+		DOCKERHUB_CREDENTIALS=credentials('dockerhub')
+	}
+
+    options { buildDiscarder(logRotator(artifactDaysToKeepStr: '',
+     artifactNumToKeepStr: '', daysToKeepStr: '3', numToKeepStr: '5'))
+      disableConcurrentBuilds() }
+      
+
+    stages {
+        
+       stage('Setup parameters') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                          
+
+                            string(
+                                defaultValue: '001', 
+                                name: 'ImageTAG', 
+                                trim: true
+                            ),
+
+                            string(name: 'WARNTIME',
+                             defaultValue: '2',
+                            description: '''Warning time (in minutes) before starting upgrade'''),
+
+                             
+                         
+                          string(
+                                defaultValue: 'develop',
+                                name: 'Please_leave_this_section_as_it_is',
+                                trim: true
+                            ),
+                        ])
+                    ])
+                }
+            }
+        }
+
+     
+
+     //////////////////////////////////
+       stage('warning') {
+      steps {
+        script {
+            notifyUpgrade(currentBuild.currentResult, "WARNING")
+            sleep(time:env.WARNTIME, unit:"MINUTES")
+        }
+      }
+    }
+
+        
+   
+   stage('pull image') {
+        
+            steps {
+               sh '''
+	      docker rmi -f devopseasylearning2021/production:$ImageTAG || true 
+          docker pull  devopseasylearning2021/production:$ImageTAG
+               '''
+            }
+        }
+
+
+
+    stage('Generationg compose file') {
+            steps {
+               sh '''
+rm -rf docker-compose.yml || true 
+cat <<EOF > docker-compose.yml
+version: "3"
+services:
+    money:
+       image: devopseasylearning2021/production:$ImageTAG 
+       container_name: money
+       expose:
+        - 8080
+       ports:
+         - 9089:8080
+
+EOF
+
+ls -l 
+                '''
+            }
+        }
+
+    stage('Deploy with compose ') {
+            steps {
+               sh '''
+docker-compose down || true 
+docker-compose up -d 
+docker-compose ps 
+curl ifconfig.co 
+                '''
+            }
+        }
+
+
+    }
+
+
+
+ 
+ post {
+    always {
+      script {
+        notifyUpgrade(currentBuild.currentResult, "POST")
+      }
+    }
+    
+  }
+
+
+
+
+}
+
+
+
+
+
+
+
+def notifyUpgrade(String buildResult, String whereAt) {
+  if (Please_leave_this_section_as_it_is == 'origin/develop') {
+    channel = 'pre-production-alerts'
+  } else {
+    channel = 'pre-production-alerts'
+  }
+  if (buildResult == "SUCCESS") {
+    switch(whereAt) {
+      case 'WARNING':
+        slackSend(channel: channel,
+                color: "#439FE0",
+                message: "PREPROD-MONEY: Upgrade starting in ${env.WARNTIME} minutes @ ${env.BUILD_URL}  Application MONEY")
+        break
+    case 'STARTING':
+      slackSend(channel: channel,
+                color: "good",
+                message: "PREPROD-MONEY: Starting upgrade @ ${env.BUILD_URL} Application MONEY")
+      break
+    default:
+        slackSend(channel: channel,
+                color: "good",
+                message: "PREPROD-MONEY: Upgrade completed successfully @ ${env.BUILD_URL}  Application MONEY")
+        break
+    }
+  } else {
+    slackSend(channel: channel,
+              color: "danger",
+              message: "PREPROD-MONEY: Upgrade was not successful. Please investigate it immediately.  @ ${env.BUILD_URL}  Application MONEY")
+  }
+}
