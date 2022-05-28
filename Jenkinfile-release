@@ -1,0 +1,104 @@
+pipeline {
+    agent {
+                label ("Node1")
+            }
+
+
+options {
+      buildDiscarder(logRotator(numToKeepStr: '20'))
+      disableConcurrentBuilds()
+      timeout (time: 30, unit: 'MINUTES')
+      timestamps()
+    }
+
+            parameters {
+ 
+    string(name: 'branch',
+           defaultValue: 'develop',
+           description: '''Branch to build and deploy from''')
+
+    string(name: 'tag',
+           defaultValue: 'develop',
+           description: '''Provide release tag''')
+
+    string(name: 'Name',
+           defaultValue: 'Stephanie',
+           description: '''Please enter your first and last name''')
+
+        
+  }
+
+    stages {
+     
+
+         stage('Cloning the requet branch') {
+            steps {
+               
+                sh '''
+                rm -rf ./*
+              git clone -b $branch https://github.com/devopseasylearning/maven-project.git
+              cp -r maven-project/* . 
+              rm -rf maven-project 
+                '''
+
+            }
+        }
+
+
+          stage('Buiding docker images') {
+            steps {
+            sh '''
+                docker build -t devopseasylearning2021/aplha:$tag  .
+                '''
+            }
+        }
+        
+        
+        stage('push to nexus') {
+            steps {
+                sh '''
+        docker login -u devopseasylearning2021 -p DevOps2021@
+        docker push devopseasylearning2021/aplha:$tag 
+              
+                '''
+            }
+        }
+    
+        stage('Tagging branch') {
+            steps {
+                sh '''
+                ls   
+                '''
+            }
+        }
+
+
+        stage('commit tag to github') {
+            steps {
+                sh '''
+                ls 
+              
+               '''
+            }
+        }
+
+
+    }
+
+
+
+ post {
+    success {
+      slackSend (channel: '#focus-group', color: 'good', message: "@here New realease certified by devt and request by $name\n Description: Release $tag\n 1- Push to Nexus\n 2- Push to dockerhub\n 3- Release $tag commited to github\n")
+    }
+
+    failure {
+      slackSend (channel: '#focus-group', color: 'danger', message: "@here $tag failed, please investigate")
+    }
+}
+
+
+
+
+
+}

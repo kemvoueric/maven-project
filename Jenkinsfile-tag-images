@@ -1,0 +1,130 @@
+pipeline {
+    agent { 
+        label 'node1'
+         }
+   
+   environment {
+		DOCKERHUB_CREDENTIALS=credentials('dockerhub')
+	}
+
+    options { buildDiscarder(logRotator(artifactDaysToKeepStr: '',
+     artifactNumToKeepStr: '', daysToKeepStr: '3', numToKeepStr: '5'))
+      disableConcurrentBuilds() }
+      
+
+    stages {
+        
+       stage('Setup parameters') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                           string(
+                                defaultValue: 'develop', 
+                                name: 'BranchName', 
+                                trim: true
+                            ),
+                            
+                            string(
+                                defaultValue: '001', 
+                                name: 'ImageTAG', 
+                                trim: true
+                            )
+                        ])
+                    ])
+                }
+            }
+        }
+
+
+
+
+ stage(' cloning') {
+   
+
+            steps {
+               sh '''
+               rm -rf ./*
+	       git clone -b $BranchName https://github.com/devopseasylearning/maven-project.git
+           cp -r maven-project/* . 
+           rm -rf maven-project/
+           ls -l
+               '''
+            }
+        }
+
+
+        stage('clean') {
+          
+
+            steps {
+               sh '''
+	       mvn clean install package
+               '''
+            }
+        }
+
+stage('build ') {
+
+            steps {
+               sh '''
+           docker build -t devopseasylearning2021/production:$ImageTAG .
+               '''
+            }
+        }
+       
+
+
+
+
+
+      stage('Docker Login') {
+
+			steps {
+				sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+			}
+		}
+
+           
+            
+
+     stage('Docker push ') {
+            steps {
+               sh '''
+              docker push devopseasylearning2021/production:$ImageTAG 
+                '''
+            }
+        }
+
+    
+
+
+
+    }
+
+
+
+   post {
+   
+   success {
+      slackSend (channel: '#testing-alerts', color: 'good', message: "SUCCESSFUL: A new image is ready for testing,  with CERTIFIED tag $ImageTAG, Application MONEY   Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+    }
+
+ 
+    unstable {
+      slackSend (channel: '#development-alerts', color: 'warning', message: "UNSTABLE: Application MONEY $BranchName  $ImageTAG Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+    }
+
+    failure {
+      slackSend (channel: '#development-alerts', color: '#FF0000', message: "FAILURE: Application MONEY $BranchNameJob  $ImageTAG '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+    }
+   
+    cleanup {
+      deleteDir()
+    }
+}
+
+
+
+
+}
