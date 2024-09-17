@@ -1,0 +1,10 @@
+---
+# handlers file for docker
+- name: Enable service docker, and not touch the state
+  ansible.builtin.service:
+    name: docker
+    enabled: yes
+- name: Start service docker, if not started
+  ansible.builtin.service:
+    name: docker
+    state: started

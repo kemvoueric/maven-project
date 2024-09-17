@@ -1,0 +1,33 @@
+---
+
+- name: Remove dependencies that are no longer required
+  ansible.builtin.apt:
+    autoremove: yes
+  register: remove
+  until: "remove is not failed"
+  retries: 1
+  delay: 5
+
+- name: Remove useless packages from the cache
+  ansible.builtin.apt:
+    autoclean: yes
+  register: lsresult
+  until: "lsresult is not failed"
+  retries: 1
+  delay: 5
+
+
+
+- name: Upgrade all packages
+  command: apt update 
+
+- name: Install packages
+  apt:
+    name:
+      - git
+      - wget
+      - curl
+      - default-jre
+      - default-jdk
+    state: present
+

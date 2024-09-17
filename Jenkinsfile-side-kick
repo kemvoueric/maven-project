@@ -1,0 +1,109 @@
+pipeline {
+    agent {
+                label ("Node1")
+            }
+
+
+options {
+      buildDiscarder(logRotator(numToKeepStr: '20'))
+      disableConcurrentBuilds()
+      timeout (time: 30, unit: 'MINUTES')
+      timestamps()
+    }
+
+            parameters {
+ 
+    string(name: 'branch',
+           defaultValue: 'develop',
+           description: '''Branch to build and deploy from''')
+  }
+
+    stages {
+     
+
+         stage('Cloning the requet branch') {
+            steps {
+               
+                sh '''
+                rm -rf ./*
+              git clone -b $branch https://github.com/devopseasylearning/maven-project.git
+              cp -r maven-project/* . 
+              rm -rf maven-project 
+                '''
+
+            }
+        }
+
+
+
+         stage('Valading code syntax') {
+            steps {
+                echo 'Hello'
+                sh 'sleep 2'
+            }
+        }
+
+
+
+         stage('testing code') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 2'
+            }
+        }
+
+
+         stage('Junit report') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 2'
+            }
+        }
+        
+
+         stage('Sonarqube analysis') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 2'
+            }
+        }
+
+          
+
+        stage('Sonarqube quality gate') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 2'
+            }
+        }
+
+          stage('Buiding docker images') {
+            steps {
+            sh '''
+                COMMIT=$(git rev-parse --short HEAD)
+                docker build -t development-test:${BUILD_NUMBER}  .
+                '''
+            }
+        }
+        
+        
+        stage('Deploying to Development cluster') {
+            steps {
+                sh '''
+                curl ifconfig.co
+                echo
+                echo
+                 COMMIT=$(git rev-parse --short HEAD)
+                docker rm -f $COMMIT-${BUILD_NUMBER} || true 
+                docker run -itd --name $COMMIT-${BUILD_NUMBER}  -P development-test:${BUILD_NUMBER}
+                docker ps | grep $COMMIT-${BUILD_NUMBER}
+              
+                sh '''
+            }
+        }
+    
+
+
+
+    }
+}

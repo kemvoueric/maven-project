@@ -1,0 +1,201 @@
+pipeline {
+    agent any
+   
+
+    options { buildDiscarder(logRotator(artifactDaysToKeepStr: '',
+     artifactNumToKeepStr: '', daysToKeepStr: '3', numToKeepStr: '5'))
+      disableConcurrentBuilds() }
+      
+
+    stages {
+        
+       stage('Setup parameters') {
+            steps {
+                script { 
+                    properties([
+                        parameters([
+                          
+
+                            string(
+                                defaultValue: '001', 
+                                name: 'ImageTAG', 
+                                trim: true
+                            ),
+
+                            string(name: 'WARNTIME',
+                             defaultValue: '2',
+                            description: '''Warning time (in minutes) before starting upgrade'''),
+
+                             
+                         
+                          string(
+                                defaultValue: 'develop',
+                                name: 'Please_leave_this_section_as_it_is',
+                                trim: true
+                            ),
+                        ])
+                    ])
+                }
+            }
+        }
+
+     
+
+     //////////////////////////////////
+       stage('warning') {
+      steps {
+        script {
+            notifyUpgrade(currentBuild.currentResult, "WARNING")
+            sleep(time:env.WARNTIME, unit:"MINUTES")
+        }
+      }
+    }
+
+        
+
+
+        stage('pull image') {
+        
+            steps {
+               sh '''
+	      docker rmi -f devopseasylearning2021/production:$ImageTAG || true 
+          docker pull  devopseasylearning2021/production:$ImageTAG
+               '''
+            }
+        }
+
+        stage('Test1') {
+        
+            steps {
+               sh '''
+             ls
+               '''
+            }
+        }
+
+stage('Test2') {
+
+            steps {
+               sh '''
+               ls
+               '''
+            }
+        }
+
+
+
+stage('Test3') {
+
+            steps {
+               sh '''
+              ls
+               '''
+            }
+        }
+
+stage('test4') {
+
+
+            steps {
+               sh '''
+              ls
+               '''
+            }
+        }
+
+stage('Test5') {
+
+            steps {
+               sh '''
+               ls
+               '''
+            }
+        }
+
+
+stage('Test6') {
+
+            steps {
+               sh '''
+            ls
+               '''
+            }
+        }
+       
+       stage('SonarQube analysis') {
+            agent {
+                docker {
+
+                  image 'sonarsource/sonar-scanner-cli:4.7.0'
+                }
+               }
+               environment {
+        CI = 'true'
+        scannerHome='/opt/sonar-scanner'
+    }
+            steps{
+                withSonarQubeEnv('Sonar') {
+                    sh "${scannerHome}/bin/sonar-scanner"
+                }
+            }
+        }
+
+
+
+
+
+    }
+
+
+
+ 
+ post {
+    always {
+      script {
+        notifyUpgrade(currentBuild.currentResult, "POST")
+      }
+    }
+    
+  }
+
+
+
+
+}
+
+
+
+
+
+
+
+def notifyUpgrade(String buildResult, String whereAt) {
+  if (Please_leave_this_section_as_it_is == 'origin/develop') {
+    channel = 'testing-alerts'
+  } else {
+    channel = 'testing-alerts'
+  }
+  if (buildResult == "SUCCESS") {
+    switch(whereAt) {
+      case 'WARNING':
+        slackSend(channel: channel,
+                color: "#439FE0",
+                message: "MONEY: SERVER TEST starting in ${env.WARNTIME} minutes @ ${env.BUILD_URL}  Application MONEY")
+        break
+    case 'STARTING':
+      slackSend(channel: channel,
+                color: "good",
+                message: "MONEY: Starting SERVER TEST @ ${env.BUILD_URL} Application MONEY")
+      break
+    default:
+        slackSend(channel: channel,
+                color: "good",
+                message: "MONEY: Upgrade SERVER TEST successfully @ ${env.BUILD_URL}  Application MONEY")
+        break
+    }
+  } else {
+    slackSend(channel: channel,
+              color: "danger",
+              message: "MONEY: SERVER TEST  was not successful. Please investigate it immediately.  @ ${env.BUILD_URL}  Application MONEY")
+  }
+}

@@ -1,0 +1,54 @@
+---
+
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: latest
+    update_cache: true
+
+- name: Install required system packages
+  apt:
+    name:  "{{ packages }}"
+    state: latest
+    update_cache: true
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: "{{ gpg }}"
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb "{{ ubuntu}}" focal stable
+    state: present
+
+
+- name: Update apt and install docker-ce
+  apt:
+    name: docker-ce
+    state: latest
+    update_cache: true
+
+
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+
+- name: Checking if docker is installed
+  shell: |
+       docker ps 
+       docker pull alpine 
+  register: docker
+
+- name: Print uptime of managed node
+  debug:
+    msg: "{{ docker }}"
+
+
+
+- name: Checking if docker is installed
+  shell: |
+     usermod -aG docker $USER
+     curl -L "https://github.com/docker/compose/releases/download/1.29.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+     chmod +x /usr/local/bin/docker-compose

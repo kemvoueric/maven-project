@@ -1,0 +1,11 @@
+---
+gpg: https://download.docker.com/linux/ubuntu/gpg
+ubuntu: https://download.docker.com/linux/ubuntu
+packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      - virtualenv
+      - python3-setuptools

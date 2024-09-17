@@ -1,0 +1,94 @@
+---
+
+
+- name: cleaning directory
+  shell: | 
+        rm -rf /root/deploy/
+        rm -rf /home/ansible/*
+        rm -rf 
+  
+  
+- name: Create a directory if it does not exist
+  ansible.builtin.file:
+    path: /root/deploy
+    state: directory
+    mode: '0755'
+
+
+
+- name: Git checkout
+  ansible.builtin.git:
+    repo: "{{ repo }}"
+    dest: /root/deploy
+
+- name: moving 
+  shell: |
+      cp -r /root/deploy/*  /home/ansible/
+      cd /home/ansible/
+
+
+
+
+- name: checking the code 
+  script: check.sh
+  register: script
+
+- name: Print output
+  debug:
+    msg: "{{ script }}"
+
+
+- name:  building artifact 
+  shell: | 
+     docker run -it  --rm -v $PWD:/ansible -w /ansible maven:3.8.5-openjdk-8-slim bash -c "mvn clean ; mvn compile ; mvn test ; mvn package;  mvn verify ; mvn install" 
+  
+- name: verifying output
+  shell: |
+      ls -ltr  /home/ansible/webapp/target/
+  register: output
+
+- name: Print output
+  debug:
+    msg: "{{ output }}"
+
+- name: construct Dockerfile
+  shell: | 
+        cat <<EOF > print.sh
+         FROM tomcat:8.0-alpine
+         COPY /home/ansible/webapp/target/webapp.war  /usr/local/tomcat/webapps
+        EOF 
+      
+- name:  build the image
+  shell: | 
+     docker-compose down 
+     docker rm -f $(docker ps -aq)
+     docker rmi -f $(docker images -aq) 
+     docker build -t canary:v1  .
+
+
+- name:  build compose file 
+  shell: | 
+        rm -rf docker-compose.yml || true
+        cat <<EOF > docker-compose.yml
+         version : "3.3"
+         services:
+           tomcat:
+              image: canary:v1
+              expose:
+               - 8080
+              ports: 
+                - 8080:8080
+              container_name: canary
+              restart: always       
+
+- name:  checking compose file 
+  shell:  cat docker-compose.yml 
+  register: compose
+
+- name: Print output
+  debug:
+    msg: "{{ compose }}"
+
+    
+- name:  deploy 
+  shell:  docker-compose up -d
