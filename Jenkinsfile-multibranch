@@ -1,0 +1,61 @@
+pipeline {
+    agent {
+                label ("Node1")
+            }
+
+    stages {
+     
+
+         stage('Valading code syntax') {
+            steps {
+                echo 'Hello Wgdfwgngfmmgjhmghjfwgwfgeorld'
+                sh 'sleep 5'
+            }
+        }
+
+
+
+         stage('testing code') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 5'
+            }
+        }
+
+
+         stage('Junit report') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 5'
+            }
+        }
+        
+
+         stage('Sonarqube analysis') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 5'
+            }
+        }
+
+          
+
+        stage('Sonarqube quality gate') {
+            steps {
+                echo 'Hello World'
+                sh 'sleep 5'
+            }
+        }
+
+          stage('Buiding docker images') {
+            steps {
+            sh '''
+                COMMIT=$(git rev-parse --short HEAD)
+                docker build -t $COMMIT-${BUILD_NUMBER}:$BUILD_ID  .
+                '''
+            }
+        }
+        
+
+    }
+}
